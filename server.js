@@ -688,5 +688,5 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Running on port ${PORT}`));
 
 setInterval(async () => {
-  try { await fetchWithTimeout('https://cashflix-r5r2.onrender.com//'); } catch(e) {}
+  try { await fetchWithTimeout('https://cashflix-r5r2.onrender.com/'); } catch(e) {}
 }, 14 * 60 * 1000);
