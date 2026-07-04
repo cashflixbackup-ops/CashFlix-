@@ -507,10 +507,10 @@ app.post('/webhook', async (req, res) => {
           );
         } else if (u.upi_id) {
           userState[chat_id] = { state: 'withdraw_amount', method: 'upi', payment: u.upi_id, timestamp: Date.now() };
-          await sendMsg(chat_id, `<b>💸 Please enter withdrawal amount (Minimum: ₹50.00):</b>`);
+          await sendMsg(chat_id, `<b>Please enter withdrawal amount (Minimum: ₹50.00):</b>`);
         } else if (u.bank_account) {
           userState[chat_id] = { state: 'withdraw_amount', method: 'bank', payment: `${u.bank_account} | ${u.bank_ifsc}`, timestamp: Date.now() };
-          await sendMsg(chat_id, `<b>💸 Please enter withdrawal amount (Minimum: ₹50.00):</b>`);
+          await sendMsg(chat_id, `<b>Please enter withdrawal amount (Minimum: ₹50.00):</b>`);
         }
       }
 
