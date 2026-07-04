@@ -497,12 +497,12 @@ app.post('/webhook', async (req, res) => {
           await sendMsg(chat_id, `<b>❌ Minimum ₹50 Required To Withdraw!</b>`, mainKeyboard);
         } else if (!u.upi_id && !u.bank_account) {
           await sendInlineMsg(chat_id, `<b>⚠️ Choose Payment Method:</b>`,
-            [[{ text: '💳 UPI', callback_data: 'set_upi' }], [{ text: '🏦 Bank', callback_data: 'set_bank' }]]
+            [[{ text: '💸 UPI Transfer', callback_data: 'set_upi' }], [{ text: '💸Bank Transfer', callback_data: 'set_bank' }]]
           );
         } else if (u.upi_id && u.bank_account) {
           await sendInlineMsg(chat_id,
-            `<b>💸 Choose Payment Method:</b>\n\n<b>💰 Available Balance: ₹${parseFloat(u.balance).toFixed(2)}</b>`,
-            [[{ text: '💳 UPI', callback_data: 'withdraw_upi' }], [{ text: '🏦 Bank', callback_data: 'withdraw_bank' }]]
+            `<b>💸 Choose Payment Method:</b>`,
+            [[{ text: '💸UPI Transfer', callback_data: 'withdraw_upi' }], [{ text: '💸 Bank Transfer', callback_data: 'withdraw_bank' }]]
           );
         } else if (u.upi_id) {
           userState[chat_id] = { state: 'withdraw_amount', method: 'upi', payment: u.upi_id, timestamp: Date.now() };
