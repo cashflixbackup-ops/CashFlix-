@@ -449,4 +449,152 @@ app.post('/webhook', async (req, res) => {
         }
 
       } else if (state === 'withdraw_amount') {
-        const 
+        const amt = parseFloat(text);
+        if (isNaN(amt) || amt < 50) {
+          await sendMsg(chat_id, `<b>❌ Minimum ₹50 required!</b>`);
+        } else {
+          const users = await dbGet('users', `telegram_id=eq.${chat_id}`);
+          if (users.length > 0) {
+            const u = users[0];
+            if (parseFloat(u.balance) < amt) {
+              await sendMsg(chat_id, `<b>❌ Insufficient balance! Available: ₹${parseFloat(u.balance).toFixed(2)}</b>`);
+            } else {
+              userState[chat_id] = { ...userState[chat_id], state: 'confirm_withdraw', amount: amt, timestamp: Date.now() };
+              await sendInlineMsg(chat_id,
+                `<b>💸 Confirm Withdrawal\n\n💰 Amount: ₹${amt}\n💳 Payment: ${userState[chat_id].payment}</b>`,
+                [
+                  [{ text: '✅ Confirm', callback_data: 'confirm_withdraw' }],
+                  [{ text: '❌ Cancel', callback_data: 'cancel_withdraw' }]
+                ]
+              );
+            }
+          }
+        }
+      }
+    }
+
+  } catch(e) {
+    console.error('Webhook error:', e);
+  }
+});
+
+// ✅ Postback endpoint
+app.get('/postback', async (req, res) => {
+  try {
+    const { click_id = 'N/A', event = 'N/A', token } = req.query;
+
+    if (token !== POSTBACK_TOKEN) {
+      console.log('INVALID TOKEN:', token);
+      return res.status(403).send('Forbidden');
+    }
+
+    const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+    if (!rateLimit(ip, 50, 60000)) return res.status(429).send('Too Many Requests');
+
+    console.log('POSTBACK RECEIVED:', req.query);
+
+    let offer = req.query.offer || 'Unknown';
+    let runTime = getTime();
+
+    try {
+      const clicks = await dbGet('clicks', `click_id=eq.${encodeURIComponent(click_id)}&order=created_at.desc&limit=1`);
+      if (clicks.length > 0) {
+        offer = clicks[0].offer_name;
+        runTime = new Date(clicks[0].created_at).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', hour12: false }).replace(',', '');
+      }
+    } catch(e) {}
+
+    const config = offerConfig[offer] || { installAmt: 0, trialAmt: 0, installBalance: false, trialBalance: false, installComment: `${offer} Install`, trialComment: `${offer} Trial` };
+
+    const eventName = event?.trim().toLowerCase();
+    const isInstall = ['web', 'initial', 'install', 'e1', 'default', 'signup', 'sign_up_success', 'af_complete_registration'].includes(eventName);
+    const isTrial = ['trial', 'purchase', 'e2', 'complete', 'goldbuy', 'gold_silver_successful_purchase'].includes(eventName);
+
+    const trackTime = getTime();
+
+    const users = await dbGet('users', `phone=eq.${encodeURIComponent(click_id)}`);
+    const userFound = users.length > 0;
+    const u = userFound ? users[0] : null;
+
+    if (isInstall) {
+      const amount = config.installAmt || 0;
+      const addBalance = config.installBalance;
+      const comment = config.installComment;
+
+      if (amount > 0 && userFound && addBalance) {
+        const newBal = parseFloat(u.balance) + amount;
+        const newLife = parseFloat(u.lifetime_earnings) + amount;
+        await dbPatch('users', `phone=eq.${encodeURIComponent(click_id)}`, { balance: newBal, lifetime_earnings: newLife });
+        await sendMsg(u.telegram_id, `<b>🧿 Cashback Credited 🧿\n\n💶 Amount = ${amount}\n💰 Updated Balance = ${newBal.toFixed(2)}\n\n💡 Comment = ${comment}</b>`);
+        await dbPost('conversions', { user_id: click_id, offer_name: offer, event, amount, comment });
+      }
+
+      const userPayment = userFound ? 'Success' : 'Failed';
+      const msg = `<b>Conversation Count 💝</b>\n\n<b>🎁 Offer Name</b> - ${offer}\n\n<b>User Id</b> : ${click_id}\n<b>🥳 Sms Sent</b> : ${userPayment}\n\n<b>Run Time</b> - ${runTime}\n<b>Track Time</b> - ${trackTime}\n\n<i>Powered By - CashFlix</i>`;
+      await sendMsg(CHAT_ID, msg);
+    }
+
+    if (isTrial) {
+      const amount = config.trialAmt || 0;
+      const addBalance = config.trialBalance;
+      const comment = config.trialComment;
+
+      if (amount > 0 && userFound && addBalance) {
+        const newBal = parseFloat(u.balance) + amount;
+        const newLife = parseFloat(u.lifetime_earnings) + amount;
+        await dbPatch('users', `phone=eq.${encodeURIComponent(click_id)}`, { balance: newBal, lifetime_earnings: newLife });
+        await sendMsg(u.telegram_id, `<b>🧿 Cashback Credited 🧿\n\n💶 Amount = ${amount}\n💰 Updated Balance = ${newBal.toFixed(2)}\n\n💡 Comment = ${comment}</b>`);
+        await dbPost('conversions', { user_id: click_id, offer_name: offer, event, amount, comment });
+      }
+
+      const userPayment = userFound ? 'Success' : 'Failed';
+      const msg = `<b>Conversation Count 💝</b>\n\n<b>🎁 Offer Name</b> - ${offer}\n\n<b>User Id</b> : ${click_id}\n<b>User Payment</b> : ${userPayment}\n\n<b>Run Time</b> - ${runTime}\n<b>Track Time</b> - ${trackTime}\n\n<i>Powered By - CashFlix</i>`;
+      await sendMsg(CHAT_ID, msg);
+    }
+
+  } catch(e) {
+    console.error('Postback error:', e);
+  }
+  res.send('OK');
+});
+
+// ✅ Click endpoint
+app.post('/click', async (req, res) => {
+  try {
+    const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+    if (!rateLimit(ip, 30, 60000)) return res.status(429).json({ success: false });
+    const { click_id, offer_name } = req.body;
+    if (!click_id || !offer_name) return res.json({ success: false });
+    console.log('CLICK RECEIVED:', { click_id, offer_name });
+    await dbPost('clicks', { click_id, offer_name });
+    res.json({ success: true });
+  } catch(e) {
+    console.error(e);
+    res.json({ success: false });
+  }
+});
+
+// ✅ Offer status endpoint
+app.get('/offer-status', async (req, res) => {
+  try {
+    const { offer } = req.query;
+    if (!offer) return res.json({ is_active: true });
+    const result = await dbGet('offer_status', `offer_name=eq.${encodeURIComponent(offer)}`);
+    if (result.length > 0) {
+      res.json({ is_active: result[0].is_active });
+    } else {
+      res.json({ is_active: true });
+    }
+  } catch(e) {
+    res.json({ is_active: true });
+  }
+});
+
+app.get('/', (req, res) => res.send('TrackFlix Wallet Bot Running! ✅'));
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log(`Running on port ${PORT}`));
+
+setInterval(async () => {
+  try { await fetchWithTimeout('https://cashflix-r5r2.onrender.com/'); } catch(e) {}
+}, 14 * 60 * 1000);
