@@ -240,7 +240,7 @@ app.post('/webhook', async (req, res) => {
           const u = users[0];
           if (parseFloat(u.balance) >= 50) {
             userState[chat_id] = { state: 'withdraw_amount', method: 'upi', payment: u.upi_id, message_id, timestamp: Date.now() };
-            await editMsg(chat_id, message_id, `<b>💸 Please enter withdrawal amount (Minimum: ₹50.00):</b>`, []);
+            await editMsg(chat_id, message_id, `<b>Please enter withdrawal amount (Minimum: ₹50.00):</b>`, []);
           } else {
             await sendMsg(chat_id, `<b>❌ Minimum ₹50 Required To Withdraw!</b>`, mainKeyboard);
           }
@@ -253,7 +253,7 @@ app.post('/webhook', async (req, res) => {
           const u = users[0];
           if (parseFloat(u.balance) >= 50) {
             userState[chat_id] = { state: 'withdraw_amount', method: 'bank', payment: `${u.bank_account} | ${u.bank_ifsc}`, message_id, timestamp: Date.now() };
-            await editMsg(chat_id, message_id, `<b>💸 Please enter withdrawal amount (Minimum: ₹50.00):</b>`, []);
+            await editMsg(chat_id, message_id, `<b>Please enter withdrawal amount (Minimum: ₹50.00):</b>`, []);
           } else {
             await sendMsg(chat_id, `<b>❌ Minimum ₹50 Required To Withdraw!</b>`, mainKeyboard);
           }
@@ -434,9 +434,9 @@ app.post('/webhook', async (req, res) => {
         if (users.length > 0) {
           const u = users[0];
           if (isNaN(amt) || amt < 50) {
-            await sendMsg(chat_id, `<b>❌ Minimum ₹50 Required! Please enter again:</b>`);
+            await sendMsg(chat_id, `<b>❌ Insufficient balance!</b>`);
           } else if (amt > parseFloat(u.balance)) {
-            await sendMsg(chat_id, `<b>❌ Insufficient balance! Available: ₹${parseFloat(u.balance).toFixed(2)}</b>`);
+            await sendMsg(chat_id, `<b>❌ Insufficient balance!</b>`);
           } else {
             const method = userState[chat_id].method;
             const payment = userState[chat_id].payment;
@@ -497,12 +497,12 @@ app.post('/webhook', async (req, res) => {
           await sendMsg(chat_id, `<b>❌ Minimum ₹50 Required To Withdraw!</b>`, mainKeyboard);
         } else if (!u.upi_id && !u.bank_account) {
           await sendInlineMsg(chat_id, `<b>⚠️ Choose Payment Method:</b>`,
-            [[{ text: '💸 UPI Transfer', callback_data: 'set_upi' }], [{ text: '💸Bank Transfer', callback_data: 'set_bank' }]]
+            [[{ text: '💸 UPI Transfer', callback_data: 'set_upi' }], [{ text: '🏦 Bank Transfer', callback_data: 'set_bank' }]]
           );
         } else if (u.upi_id && u.bank_account) {
           await sendInlineMsg(chat_id,
-            `<b>💸 Choose Payment Method:</b>`,
-            [[{ text: '💸UPI Transfer', callback_data: 'withdraw_upi' }], [{ text: '💸 Bank Transfer', callback_data: 'withdraw_bank' }]]
+            `<b>Choose Payment Method:</b>`,
+            [[{ text: '💸 UPI Transfer', callback_data: 'withdraw_upi' }], [{ text: '🏦 Bank Transfer', callback_data: 'withdraw_bank' }]]
           );
         } else if (u.upi_id) {
           userState[chat_id] = { state: 'withdraw_amount', method: 'upi', payment: u.upi_id, timestamp: Date.now() };
