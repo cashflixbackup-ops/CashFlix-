@@ -284,7 +284,7 @@ app.post('/webhook', async (req, res) => {
             await dbPost('withdrawals', { telegram_id: chat_id, amount: parseFloat(state.amount), upi_id: state.payment, status: 'pending', request_id: requestId });
             await dbPatch('users', `telegram_id=eq.${chat_id}`, { balance: newBal < 0 ? 0 : newBal });
             await sendInlineMsg(chat_id,
-              `<b>⏳ Withdrawal Request Submitted!</b>\n\n<b>📊 Request ID: ${requestId}</b>\n<b>💰 Amount: ₹${state.amount}</b>\n<b>📱 Method: ${state.method === 'upi' ? 'UPI' : 'Bank'}</b>\n<b>📅 Date: ${now}</b>`,
+              `<b>⏳ Withdrawal Request Submitted For Meunal Approval!</b>\n\n<b>📊 Request ID: ${requestId}</b>\n<b>💰 Amount: ₹${state.amount}</b>\n<b>📱 Method: ${state.method === 'upi' ? 'UPI' : 'Bank'}</b>\n<b>📅 Date: ${now}</b>`,
               [[{ text: '🔍 Check Status', callback_data: `status_${requestId}` }]]
             );
             await sendInlineMsg(ADMIN_ID,
@@ -359,7 +359,7 @@ app.post('/webhook', async (req, res) => {
           await editMsg(ADMIN_ID, message_id,
             `<b>💸 Withdraw Request</b>\n\n<b>📊 Request ID: ${requestId}</b>\n<b>💰 Amount: ₹${w.amount}</b>\n<b>💳 Payment: ${w.upi_id}</b>\n\n<b>❌ Cancelled</b>`, []
           );
-          await sendMsg(w.telegram_id, `<b>❌ Your withdraw request failed. Please contact CashFlix support.</b>\n\n<b>💰 ₹${parseFloat(w.amount).toFixed(2)} has been refunded to your wallet!</b>`);
+          await sendMsg(w.telegram_id, `<b>❌ Your withdraw request failed. Please contact Etihad support.</b>\n\n<b>💰 ₹${parseFloat(w.amount).toFixed(2)} has been refunded to your wallet!</b>`);
           await answerAlert(callback_query.id, '❌ Cancelled!');
         }
 
@@ -411,7 +411,7 @@ app.post('/webhook', async (req, res) => {
         if (isValidUPI(text)) {
           await dbPatch('users', `telegram_id=eq.${chat_id}`, { upi_id: text });
           delete userState[chat_id];
-          await sendMsg(chat_id, `<b>✅ UPI ID updated successfully!</b>\n\n<b>💳 UPI ID: ${text}</b>`, mainKeyboard);
+          await sendMsg(chat_id, `<b>✅ UPI ID updated successfully!</b>`, mainKeyboard);
         } else {
           await sendMsg(chat_id, `<b>❌ Invalid UPI format! Please try again.\n\nExample: john.doe@okaxis</b>`);
         }
@@ -431,7 +431,7 @@ app.post('/webhook', async (req, res) => {
           const account = userState[chat_id].account;
           await dbPatch('users', `telegram_id=eq.${chat_id}`, { bank_account: account, bank_ifsc: text.toUpperCase() });
           delete userState[chat_id];
-          await sendMsg(chat_id, `<b>✅ Bank Details updated successfully!</b>\n\n<b>🏦 Account: ${account}</b>\n<b>📋 IFSC: ${text.toUpperCase()}</b>`, mainKeyboard);
+          await sendMsg(chat_id, `<b>✅ Bank Details updated successfully!</b>`, mainKeyboard);
         } else {
           await sendMsg(chat_id, `<b>❌ Invalid IFSC code format. Please enter a valid IFSC code (e.g., SBIN0001234). Please try again</b>`);
         }
@@ -462,7 +462,7 @@ app.post('/webhook', async (req, res) => {
               if (userState[chat_id]?.state === 'withdraw_confirm') {
                 delete userState[chat_id];
               }
-            }, 60000);
+            }, 0);
           }
         }
         return res.send('OK');
@@ -515,10 +515,10 @@ app.post('/webhook', async (req, res) => {
           );
         } else if (u.upi_id) {
           userState[chat_id] = { state: 'withdraw_amount', method: 'upi', payment: u.upi_id, timestamp: Date.now() };
-          await sendMsg(chat_id, `<b>💸 Please enter withdrawal amount (Minimum: ₹50.00):</b>`);
+          await sendMsg(chat_id, `<b>Please enter withdrawal amount (Minimum: ₹50.00):</b>`);
         } else if (u.bank_account) {
           userState[chat_id] = { state: 'withdraw_amount', method: 'bank', payment: `${u.bank_account} | ${u.bank_ifsc}`, timestamp: Date.now() };
-          await sendMsg(chat_id, `<b>💸 Please enter withdrawal amount (Minimum: ₹50.00):</b>`);
+          await sendMsg(chat_id, `<b>Please enter withdrawal amount (Minimum: ₹50.00):</b>`);
         }
       }
 
