@@ -208,7 +208,7 @@ app.post('/webhook', async (req, res) => {
         } else {
           // ✅ UPI nahi hai to no details message
           await editMsg(chat_id, message_id,
-            `<b>💸 UPI Details:\n\nNo UPI saved.</b>`,
+            `<b>💸 UPI Details:\n\nNo Upi Details saved.</b>`,
             [[{ text: '✏️ Update', callback_data: 'update_upi' }]]
           );
         }
@@ -247,7 +247,7 @@ app.post('/webhook', async (req, res) => {
           if (!u.upi_id) {
             // ✅ UPI nahi hai
             await editMsg(chat_id, message_id,
-              `<b>💸 UPI Details:\n\nNo UPI saved.</b>`,
+              `<b>💸 UPI Details:\n\nNo Upi Details saved.</b>`,
               [[{ text: '✏️ Update', callback_data: 'update_upi' }]]
             );
           } else if (parseFloat(u.balance) >= 50) {
@@ -524,10 +524,10 @@ app.post('/webhook', async (req, res) => {
           );
         } else if (u.upi_id) {
           userState[chat_id] = { state: 'withdraw_amount', method: 'upi', payment: u.upi_id, timestamp: Date.now() };
-          await sendMsg(chat_id, `<b>💸 Please enter withdrawal amount (Minimum: ₹50.00):</b>`);
+          await sendMsg(chat_id, `<b>Please enter withdrawal amount (Minimum: ₹50.00):</b>`);
         } else if (u.bank_account) {
           userState[chat_id] = { state: 'withdraw_amount', method: 'bank', payment: `${u.bank_account} | ${u.bank_ifsc}`, timestamp: Date.now() };
-          await sendMsg(chat_id, `<b>💸 Please enter withdrawal amount (Minimum: ₹50.00):</b>`);
+          await sendMsg(chat_id, `<b>Please enter withdrawal amount (Minimum: ₹50.00):</b>`);
         } else {
           // ✅ Koi bhi method nahi hai
           await sendInlineMsg(chat_id,
