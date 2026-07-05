@@ -240,7 +240,7 @@ app.post('/webhook', async (req, res) => {
           const u = users[0];
           // ✅ UPI check
           if (!u.upi_id) {
-            await sendMsg(chat_id, `<b>❌ Please add your UPI details first from Profile menu.</b>`, mainKeyboard);
+            await sendMsg(chat_id, `<b>❌ Please add your Payment details first from Profile menu.</b>`, mainKeyboard);
           } else if (parseFloat(u.balance) >= 50) {
             userState[chat_id] = { state: 'withdraw_amount', method: 'upi', payment: u.upi_id, message_id, timestamp: Date.now() };
             await editMsg(chat_id, message_id, `<b>Please enter withdrawal amount (Minimum: ₹50.00):</b>`, []);
